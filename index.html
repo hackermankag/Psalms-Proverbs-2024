@@ -358,8 +358,7 @@ Created by © Manzi Kagina
         const row = document.createElement("div");
         row.className = "plan-row";
 
-        if (p.date < today) row.classList.add("past");
-        if (sameDate(p.date, today)) row.classList.add("today");
+    const key = p.date.toISOString().slice(0,10); if (p.date < today || readDates.has(key)) row.classList.add("past");        if (sameDate(p.date, today)) row.classList.add("today");
 
         const dateSpan = document.createElement("span");
         dateSpan.className = "date";
@@ -371,7 +370,6 @@ Created by © Manzi Kagina
  refSpan.href = `https://www.bible.com/bible/59/${getBookAbbrev(p.book)}.${p.chapter}.ESV`;
         const tagSpan = document.createElement("span");
         tagSpan.className = "tag";
-        const key = p.date.toISOString().slice(0,10);
         if (readDates.has(key)) {
           tagSpan.textContent = "Done";
         } else {
