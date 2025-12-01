@@ -304,6 +304,10 @@
       return label === "OT" ? "Old Testament" : "New Testament";
     }
 
+     function getBookAbbrev(bookName) {
+           const m={'Leviticus':'LEV','Numbers':'NUM','Deuteronomy':'DEU','Joshua':'JOS','1 Samuel':'1SAM','2 Samuel':'2SAM','1 Chronicles':'1CHR','2 Chronicles':'2CHR','Ezra':'EZR','Song of Solomon':'SNG','Jeremiah':'JER','Ezekiel':'EZK','Joel':'JOL','Amos':'AMO','Obadiah':'OBA','Micah':'MIC','Nahum':'NAH','Habakkuk':'HAB','Zephaniah':'ZEP','Haggai':'HAG','Zechariah':'ZEC','Malachi':'MAL','Mark':'MRK','Galatians':'GAL','1 Thessalonians':'1THS','2 Thessalonians':'2THS','Titus':'TIT','Philemon':'PHM','1 John':'1JN','2 John':'2JN','3 John':'3JN','Jude':'JUD','Revelation':'REV'};
+           return m[bookName]||bookName;
+         }
     // ---- RENDERING -----------------------------------------------------
 
     const todayDateEl = document.getElementById("today-date");
@@ -357,10 +361,10 @@
         dateSpan.className = "date";
         dateSpan.textContent = formatDateHuman(p.date);
 
-        const refSpan = document.createElement("span");
+        const refSpan = document.createElement("a");
         refSpan.className = "ref";
         refSpan.textContent = `${p.book} ${p.chapter}`;
-
+ refSpan.href = `https://www.bible.com/bible/59/${getBookAbbrev(p.book)}.${p.chapter}.ESV`;
         const tagSpan = document.createElement("span");
         tagSpan.className = "tag";
         const key = p.date.toISOString().slice(0,10);
