@@ -127,7 +127,7 @@
 <body>
   <header>
     <h1>Daily Bible Reading <br> Psalms + Proverbs 2024</h1>
-    <p class="muted">Welcome to this Bible reading group. The instructions are simple. Read a chapter everyday and share a verse or verses in that chapter you meditated on.</p>
+    <p class="muted">Welcome to this Bible reading app. The instructions are simple. Read a chapter everyday and share a verse or verses in that chapter you meditated on.</p>
   </header>
 
   <main class="card">
@@ -352,6 +352,7 @@ Created by © Manzi Kagina
     function renderPlan() {
       planListEl.innerHTML = "";
       const today = new Date();
+          today.setHours(0, 0, 0, 0);
 
       plan.forEach((p, index) => {
         const row = document.createElement("div");
