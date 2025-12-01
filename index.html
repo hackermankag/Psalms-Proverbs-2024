@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Daily Bible Reading Plan</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color-scheme: light dark;
+    }
+    body {
+      margin: 0;
+      padding: 1.5rem;
+      max-width: 640px;
+      margin-inline: auto;
+      background: #0f172a;
+      color: #e5e7eb;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 0.25rem;
+    }
+    h2 {
+      font-size: 1.1rem;
+      margin-top: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .card {
+      background: #020617;
+      border-radius: 0.75rem;
+      padding: 1rem 1.25rem;
+      box-shadow: 0 20px 30px rgba(15,23,42,0.6);
+      border: 1px solid rgba(148,163,184,0.25);
+      margin-top: 1rem;
+    }
+    .muted {
+      color: #9ca3af;
+      font-size: 0.9rem;
+    }
+    .today-ref {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin: 0.4rem 0;
+    }
+    .today-date {
+      font-size: 1rem;
+      color: #9ca3af;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.1rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border: 1px solid rgba(148,163,184,0.6);
+      color: #cbd5f5;
+    }
+    button {
+      border-radius: 999px;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      background: #22c55e;
+      color: #052e16;
+      margin-right: 0.5rem;
+      margin-top: 0.75rem;
+    }
+    button.secondary {
+      background: transparent;
+      color: #e5e7eb;
+      border: 1px solid rgba(148,163,184,0.5);
+    }
+    button:active {
+      transform: translateY(1px);
+    }
+    .plan-list {
+      margin-top: 0.75rem;
+      max-height: 320px;
+      overflow: auto;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(148,163,184,0.3);
+      background: rgba(15,23,42,0.8);
+    }
+    .plan-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.85rem;
+      border-bottom: 1px solid rgba(30,41,59,0.9);
+    }
+    .plan-row:nth-child(2n) {
+      background: rgba(15,23,42,0.7);
+    }
+    .plan-row span.ref {
+      font-weight: 500;
+    }
+    .plan-row span.date {
+      color: #9ca3af;
+      white-space: nowrap;
+      margin-right: 0.75rem;
+    }
+    .plan-row span.tag {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: #a5b4fc;
+    }
+    .plan-row.today {
+      background: rgba(34,197,94,0.15);
+      border-left: 3px solid #22c55e;
+    }
+    .plan-row.past {
+      opacity: 0.55;
+      text-decoration: line-through;
+    }
+    .footer {
+      margin-top: 1.5rem;
+      font-size: 0.8rem;
+      color: #6b7280;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Daily Bible Reading</h1>
+    <p class="muted">One chapter a day from your remaining books, alternating Old and New Testament.</p>
+  </header>
+
+  <main class="card">
+    <div id="today-block">
+      <div><span class="badge" id="today-testament">Today</span></div>
+      <p class="today-date" id="today-date"></p>
+      <p class="today-ref" id="today-ref"></p>
+      <p class="muted" id="today-note"></p>
+      <button id="mark-read">Mark as read</button>
+      <button class="secondary" id="go-today">Jump to today in list</button>
+    </div>
+
+    <h2>Full schedule</h2>
+    <div class="plan-list" id="plan-list"></div>
+  </main>
+
+  <p class="footer">
+    Plan starts on 2 Dec 2025 and uses one chapter per day, keeping multi-part books together while alternating OT and NT books.
+  </p>
+
+  <script>
+    // ---- CONFIG ---------------------------------------------------------
+
+    // Start date of this plan (local time)
+    const PLAN_START = new Date(2025, 11, 2); // 2 Dec 2025 (month is 0-based)
+
+    // Books and chapter counts (Protestant canon)
+    // Only the books you listed are included.
+    const OT_BOOKS = [
+      ["Leviticus", 27],
+      ["Numbers", 36],
+      ["Deuteronomy", 34],
+      ["Joshua", 24],
+      ["1 Samuel", 31],
+      ["2 Samuel", 24],
+      ["1 Chronicles", 29],
+      ["2 Chronicles", 36],
+      ["Ezra", 10],
+      ["Song of Solomon", 8],
+      ["Jeremiah", 52],
+      ["Ezekiel", 48],
+      ["Joel", 3],
+      ["Amos", 9],
+      ["Obadiah", 1],
+      ["Micah", 7],
+      ["Nahum", 3],
+      ["Habakkuk", 3],
+      ["Zephaniah", 3],
+      ["Haggai", 2],
+      ["Zechariah", 14],
+      ["Malachi", 4]
+    ];
+
+    const NT_BOOKS = [
+      ["Mark", 16],
+      ["Galatians", 6],
+      ["1 Thessalonians", 5],
+      ["2 Thessalonians", 3],
+      ["Titus", 3],
+      ["Philemon", 1],
+      // Treat 1–3 John as one block to keep them together
+      ["1 John", 5],
+      ["2 John", 1],
+      ["3 John", 1],
+      ["Jude", 1],
+      ["Revelation", 22]
+    ];
+
+    // ---- PLAN GENERATION -----------------------------------------------
+
+    function buildChapterArray(books, testamentLabel) {
+      const out = [];
+      for (const [book, chapters] of books) {
+        for (let c = 1; c <= chapters; c++) {
+          out.push({ book, chapter: c, testament: testamentLabel });
+        }
+      }
+      return out;
+    }
+
+    // Alternate blocks of books: OT book(s), then NT book(s), etc.
+    // But do not split multi-part NT books (like 1–3 John) across the alternation.
+    function buildAlternatingPlan() {
+      const otBlocks = OT_BOOKS.map(([book, chap]) => buildChapterArray([[book, chap]], "OT"));
+      const ntBlocks = [];
+
+      // Build NT blocks; 1–3 John are already consecutive in NT_BOOKS and will be one combined block here.
+      let idx = 0;
+      while (idx < NT_BOOKS.length) {
+        const [book, chapters] = NT_BOOKS[idx];
+        if (book === "1 John") {
+          // Combine 1 John, 2 John, 3 John in one block
+          const johnBooks = NT_BOOKS.slice(idx, idx + 3);
+          ntBlocks.push(buildChapterArray(johnBooks, "NT"));
+          idx += 3;
+        } else {
+          ntBlocks.push(buildChapterArray([[book, chapters]], "NT"));
+          idx += 1;
+        }
+      }
+
+      const plan = [];
+      let otIdx = 0;
+      let ntIdx = 0;
+      let turn = "OT"; // start with OT on 2 Dec 2025
+
+      // Interleave blocks while either side still has blocks left
+      while (otIdx < otBlocks.length || ntIdx < ntBlocks.length) {
+        if (turn === "OT" && otIdx < otBlocks.length) {
+          plan.push(...otBlocks[otIdx++]);
+        } else if (turn === "NT" && ntIdx < ntBlocks.length) {
+          plan.push(...ntBlocks[ntIdx++]);
+        }
+        // Flip turn, but if the next side is empty, just continue with the side that remains
+        if (turn === "OT") {
+          turn = (ntIdx < ntBlocks.length) ? "NT" : "OT";
+        } else {
+          turn = (otIdx < otBlocks.length) ? "OT" : "NT";
+        }
+        if (otIdx >= otBlocks.length && ntIdx >= ntBlocks.length) break;
+      }
+
+      // Attach dates
+      const datedPlan = [];
+      for (let i = 0; i < plan.length; i++) {
+        const d = new Date(PLAN_START);
+        d.setDate(d.getDate() + i);
+        datedPlan.push({ ...plan[i], date: d });
+      }
+      return datedPlan;
+    }
+
+    const plan = buildAlternatingPlan();
+
+    // ---- STORAGE (simple "read" tracking) ------------------------------
+
+    const STORAGE_KEY = "bible-reading-read-dates";
+
+    function getReadDates() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? new Set(JSON.parse(raw)) : new Set();
+      } catch {
+        return new Set();
+      }
+    }
+
+    function saveReadDates(set) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(set)));
+    }
+
+    const readDates = getReadDates();
+
+    // ---- UI HELPERS ----------------------------------------------------
+
+    function formatDateHuman(d) {
+      const day = d.getDate();
+      const monthNames = [
+        "Jan","Feb","Mar","Apr","May","Jun",
+        "Jul","Aug","Sep","Oct","Nov","Dec"
+      ];
+      const month = monthNames[d.getMonth()];
+      const year = d.getFullYear();
+      return `${day} ${month} ${year}`;
+    }
+
+    function sameDate(a, b) {
+      return a.getFullYear() === b.getFullYear() &&
+             a.getMonth() === b.getMonth() &&
+             a.getDate() === b.getDate();
+    }
+
+    function testamentShort(label) {
+      return label === "OT" ? "Old Testament" : "New Testament";
+    }
+
+    // ---- RENDERING -----------------------------------------------------
+
+    const todayDateEl = document.getElementById("today-date");
+    const todayRefEl = document.getElementById("today-ref");
+    const todayBadgeEl = document.getElementById("today-testament");
+    const todayNoteEl = document.getElementById("today-note");
+    const planListEl = document.getElementById("plan-list");
+
+    function getTodayEntry() {
+      const today = new Date();
+      const idx = plan.findIndex(p => sameDate(p.date, today));
+      if (idx === -1) return null;
+      return { entry: plan[idx], index: idx };
+    }
+
+    function renderToday() {
+      const today = new Date();
+      const t = getTodayEntry();
+      if (!t) {
+        todayDateEl.textContent = formatDateHuman(today);
+        todayRefEl.textContent = "No reading scheduled for today in this plan.";
+        todayBadgeEl.textContent = "Plan complete";
+        todayNoteEl.textContent = "";
+        return;
+      }
+      const { entry } = t;
+      todayDateEl.textContent = formatDateHuman(entry.date);
+      todayRefEl.textContent = `${entry.book} ${entry.chapter}`;
+      todayBadgeEl.textContent = testamentShort(entry.testament);
+
+      const key = entry.date.toISOString().slice(0,10);
+      if (readDates.has(key)) {
+        todayNoteEl.textContent = "Marked as read.";
+      } else {
+        todayNoteEl.textContent = "Tap “Mark as read” when you finish this chapter.";
+      }
+    }
+
+    function renderPlan() {
+      planListEl.innerHTML = "";
+      const today = new Date();
+
+      plan.forEach((p, index) => {
+        const row = document.createElement("div");
+        row.className = "plan-row";
+
+        if (p.date < today) row.classList.add("past");
+        if (sameDate(p.date, today)) row.classList.add("today");
+
+        const dateSpan = document.createElement("span");
+        dateSpan.className = "date";
+        dateSpan.textContent = formatDateHuman(p.date);
+
+        const refSpan = document.createElement("span");
+        refSpan.className = "ref";
+        refSpan.textContent = `${p.book} ${p.chapter}`;
+
+        const tagSpan = document.createElement("span");
+        tagSpan.className = "tag";
+        const key = p.date.toISOString().slice(0,10);
+        if (readDates.has(key)) {
+          tagSpan.textContent = "Done";
+        } else {
+          tagSpan.textContent = p.testament === "OT" ? "OT" : "NT";
+        }
+
+        row.appendChild(dateSpan);
+        row.appendChild(refSpan);
+        row.appendChild(tagSpan);
+
+        row.dataset.index = index;
+        planListEl.appendChild(row);
+      });
+    }
+
+    function scrollToToday() {
+      const rows = planListEl.querySelectorAll(".plan-row");
+      for (const row of rows) {
+        if (row.classList.contains("today")) {
+          row.scrollIntoView({ behavior: "smooth", block: "center" });
+          break;
+        }
+      }
+    }
+
+    // ---- EVENTS --------------------------------------------------------
+
+    document.getElementById("mark-read").addEventListener("click", () => {
+      const t = getTodayEntry();
+      if (!t) return;
+      const key = t.entry.date.toISOString().slice(0,10);
+      readDates.add(key);
+      saveReadDates(readDates);
+      renderToday();
+      renderPlan();
+    });
+
+    document.getElementById("go-today").addEventListener("click", () => {
+      scrollToToday();
+    });
+
+    // ---- INITIALIZE ----------------------------------------------------
+
+    renderToday();
+    renderPlan();
+    scrollToToday();
+  </script>
+</body>
+</html>
