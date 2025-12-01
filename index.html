@@ -137,6 +137,7 @@
       <p class="today-ref" id="today-ref"></p>
       <p class="muted" id="today-note"></p>
       <button id="mark-read">Mark as read</button>
+       <button id="undo-read" class="secondary">Undo</button>
       <button class="secondary" id="go-today">Jump to today in list</button>
     </div>
 
@@ -406,6 +407,16 @@ Created by © Manzi Kagina
       renderToday();
       renderPlan();
     });
+
+     document.getElementById("undo-read").addEventListener("click", () => {
+          const t = getTodayEntry();
+          if (!t) return;
+          const key = t.entry.date.toISOString().slice(0,10);
+          readDates.delete(key);
+          saveReadDates(readDates);
+          renderToday();
+          renderPlan();
+        });
 
     document.getElementById("go-today").addEventListener("click", () => {
       scrollToToday();
